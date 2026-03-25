@@ -1,17 +1,14 @@
 import { UNITS, getCumulativeCategories } from '../data/index';
 
-// ─── Build a synthetic "category" object that combines items across the
-//     entire cumulative unit for one study mode. ─────────────────────────────
+// Build a synthetic "category" object combining all items for a given mode
+// across the entire cumulative unit.
 function buildSyntheticCategory(unitId, mode, categories, unit) {
   const items = [];
 
   if (mode === 'flashcard' || mode === 'match' || mode === 'definition-quiz') {
-    // Collect all term/answer items — flashcard AND definition-quiz categories
     for (const cat of categories) {
       if (cat.modes.includes('flashcard') || cat.modes.includes('definition-quiz')) {
         for (const item of cat.items) {
-          // Embed per-item mono flags from the source category so mixed
-          // sessions render Space Mono correctly on a card-by-card basis.
           items.push({ ...item, monoTerm: cat.monoTerm, monoAnswer: cat.monoAnswer });
         }
       }
@@ -28,12 +25,9 @@ function buildSyntheticCategory(unitId, mode, categories, unit) {
     id:            `unit-${unitId}-${mode}`,
     name:          `Unit ${unitId} — ${unit.name}`,
     items,
-    // Category-level mono flags are false; per-item flags (above) take priority
-    // inside Flashcard / DefinitionQuiz / MatchTheTerm.
     monoTerm:      false,
     monoAnswer:    false,
     modes:         [mode],
-    unitColor:     unit.color,
     unitName:      unit.name,
     isUnitSession: true,
   };
@@ -50,7 +44,6 @@ export default function UnitModeSelector({ unitId, onSelectMode, onBack }) {
   const unit       = UNITS.find((u) => u.id === unitId);
   const categories = getCumulativeCategories(unitId);
 
-  // ── Count items per mode group ──────────────────────────────────────────
   const termCount = categories
     .filter((c) => c.modes.includes('flashcard') || c.modes.includes('definition-quiz'))
     .reduce((n, c) => n + c.items.length, 0);
@@ -59,12 +52,11 @@ export default function UnitModeSelector({ unitId, onSelectMode, onBack }) {
     .filter((c) => c.modes.includes('quiz'))
     .reduce((n, c) => n + c.items.length, 0);
 
-  // ── Available modes (need enough items for meaningful play) ─────────────
   const available = [];
-  if (termCount >= 2)  available.push({ mode: 'flashcard',         count: termCount });
-  if (termCount >= 2)  available.push({ mode: 'match',             count: termCount });
-  if (equipCount > 0)  available.push({ mode: 'quiz',              count: equipCount });
-  if (termCount >= 4)  available.push({ mode: 'definition-quiz',   count: termCount });
+  if (termCount >= 2) available.push({ mode: 'flashcard',        count: termCount });
+  if (termCount >= 2) available.push({ mode: 'match',            count: termCount });
+  if (equipCount > 0) available.push({ mode: 'quiz',             count: equipCount });
+  if (termCount >= 4) available.push({ mode: 'definition-quiz',  count: termCount });
 
   function handleSelect(mode) {
     const synCat = buildSyntheticCategory(unitId, mode, categories, unit);
@@ -76,7 +68,7 @@ export default function UnitModeSelector({ unitId, onSelectMode, onBack }) {
       <div className="page-header">
         <button className="back-btn" onClick={onBack}>← Units</button>
         <div className="page-header-text">
-          <h2 className="page-title" style={{ color: unit?.color }}>
+          <h2 className="page-title">
             Unit {unitId}: {unit?.name}
           </h2>
           <p className="page-desc">
@@ -94,7 +86,6 @@ export default function UnitModeSelector({ unitId, onSelectMode, onBack }) {
             <button
               key={mode}
               className="unit-mode-card"
-              style={{ '--unit-color': unit?.color }}
               onClick={() => handleSelect(mode)}
             >
               <div className="unit-mode-label">{label}</div>

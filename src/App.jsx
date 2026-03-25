@@ -1,22 +1,21 @@
 import { useState } from 'react';
-import PathSelector    from './components/PathSelector';
-import UnitSelector    from './components/UnitSelector';
+import PathSelector     from './components/PathSelector';
+import UnitSelector     from './components/UnitSelector';
 import CategorySelector from './components/CategorySelector';
 import UnitModeSelector from './components/UnitModeSelector';
-import Flashcard       from './components/Flashcard';
-import QuizMode        from './components/QuizMode';
-import DefinitionQuiz  from './components/DefinitionQuiz';
-import MatchTheTerm    from './components/MatchTheTerm';
-import Results         from './components/Results';
-import { getCumulativeCategories } from './data/index';
+import Flashcard        from './components/Flashcard';
+import QuizMode         from './components/QuizMode';
+import DefinitionQuiz   from './components/DefinitionQuiz';
+import MatchTheTerm     from './components/MatchTheTerm';
+import Results          from './components/Results';
 import './App.css';
 
 export default function App() {
   // ── Navigation ───────────────────────────────────────────────────────────
-  const [screen, setScreen]   = useState('home');
+  const [screen, setScreen] = useState('home');
   // 'home' | 'units' | 'categories' | 'unit-mode' | 'study' | 'results'
 
-  // ── Path selection ───────────────────────────────────────────────────────
+  // ── Path ─────────────────────────────────────────────────────────────────
   const [path, setPath] = useState(null); // 'category' | 'unit'
 
   // ── Study session ────────────────────────────────────────────────────────
@@ -24,26 +23,24 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [studyMode, setStudyMode]               = useState(null);
   const [sessionScore, setSessionScore]         = useState(null);
-  // Bump to force re-mount of the study component on "Study Again"
   const [studyKey, setStudyKey]                 = useState(0);
-
-  const categories = selectedUnitId ? getCumulativeCategories(selectedUnitId) : [];
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   function handleSelectPath(newPath) {
     setPath(newPath);
-    setScreen('units');
+    // Category path: skip unit selection — jump straight to all-categories screen.
+    // Unit path: student must pick a unit first.
+    setScreen(newPath === 'category' ? 'categories' : 'units');
   }
 
+  // Only used by Path 2 (Study by Unit)
   function handleSelectUnit(unitId) {
     setSelectedUnitId(unitId);
-    setScreen(path === 'category' ? 'categories' : 'unit-mode');
+    setScreen('unit-mode');
   }
 
-  // Used by both CategorySelector (Path 1) and UnitModeSelector (Path 2).
-  // `category` is either a real category object or a synthetic one built
-  // from all items in the unit.
+  // Shared by CategorySelector (Path 1) and UnitModeSelector (Path 2)
   function handleSelectMode(category, mode) {
     setSelectedCategory(category);
     setStudyMode(mode);
@@ -61,20 +58,26 @@ export default function App() {
     setScreen('study');
   }
 
-  // "Choose Another" returns to the right pre-study screen for the active path.
   function handleChooseAnother() {
     setScreen(path === 'category' ? 'categories' : 'unit-mode');
   }
 
-  // Back button inside every study component.
   function handleBackFromStudy() {
     setScreen(path === 'category' ? 'categories' : 'unit-mode');
   }
 
+  // Path 1: back from the all-categories screen → home
+  function handleBackFromCategories() {
+    setPath(null);
+    setScreen('home');
+  }
+
+  // Path 2: back from unit-mode → unit selector
   function handleBackToUnits() {
     setScreen('units');
   }
 
+  // Path 2: back from unit selector → home
   function handleBackToHome() {
     setPath(null);
     setSelectedUnitId(null);
@@ -89,23 +92,23 @@ export default function App() {
         <PathSelector onSelectPath={handleSelectPath} />
       )}
 
+      {/* Path 2 only: pick a unit */}
       {screen === 'units' && (
         <UnitSelector
-          path={path}
           onSelectUnit={handleSelectUnit}
           onBack={handleBackToHome}
         />
       )}
 
+      {/* Path 1: all categories, no unit filter */}
       {screen === 'categories' && (
         <CategorySelector
-          unitId={selectedUnitId}
-          categories={categories}
           onSelectMode={handleSelectMode}
-          onBack={handleBackToUnits}
+          onBack={handleBackFromCategories}
         />
       )}
 
+      {/* Path 2: pick a study mode for the whole unit */}
       {screen === 'unit-mode' && (
         <UnitModeSelector
           unitId={selectedUnitId}

@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import { shuffle } from '../utils';
 
-// Build a shuffled deck.
-// Per-item monoTerm / monoAnswer flags (set on mixed-session items) override
-// the category-level defaults so that Space Mono renders correctly across
-// heterogeneous decks.
 function buildDeck(category) {
   const { items, monoTerm: catMT, monoAnswer: catMA } = category;
   const cards = items.map((item) => {
@@ -29,7 +25,6 @@ export default function Flashcard({ category, onFinish, onBack }) {
   const [correct, setCorrect]     = useState(0);
   const [missed, setMissed]       = useState(0);
 
-  // Reset whenever category changes (e.g. Study Again from parent won't re-mount)
   useEffect(() => {
     setDeck(buildDeck(category));
     setIndex(0);
@@ -56,7 +51,6 @@ export default function Flashcard({ category, onFinish, onBack }) {
       onFinish({ correct: newCorrect, missed: newMissed, total });
       return;
     }
-
     setAnimating(true);
     setTimeout(() => {
       setCorrect(newCorrect);
@@ -72,15 +66,12 @@ export default function Flashcard({ category, onFinish, onBack }) {
       <div className="study-header">
         <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="study-title-row">
-          <h2 className="study-title" style={{ color: category.unitColor }}>{category.name}</h2>
+          <h2 className="study-title">{category.name}</h2>
           <span className="study-mode-tag">Flashcards</span>
         </div>
         <div className="progress-row">
           <div className="progress-bar-track">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${progress}%`, background: category.unitColor }}
-            />
+            <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
           </div>
           <span className="progress-label">{index + 1} / {total}</span>
         </div>
@@ -95,16 +86,13 @@ export default function Flashcard({ category, onFinish, onBack }) {
         onClick={!flipped ? handleFlip : undefined}
       >
         <div className={`flashcard ${flipped ? 'flashcard--flipped' : ''}`}>
-          {/* Front */}
-          <div className="flashcard-face flashcard-front" style={{ borderTopColor: category.unitColor }}>
+          <div className="flashcard-face flashcard-front">
             <div className="flashcard-hint">tap to flip</div>
             <div className={`flashcard-text ${card.frontMono ? 'mono' : ''}`}>
               {card.front}
             </div>
           </div>
-
-          {/* Back */}
-          <div className="flashcard-face flashcard-back" style={{ borderTopColor: category.unitColor }}>
+          <div className="flashcard-face flashcard-back">
             <div className="flashcard-hint">How'd you do?</div>
             <div className={`flashcard-text ${card.backMono ? 'mono' : ''}`}>
               {card.back}

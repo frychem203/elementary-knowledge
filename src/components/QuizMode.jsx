@@ -36,15 +36,12 @@ export default function QuizMode({ category, onFinish, onBack }) {
       <div className="study-header">
         <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="study-title-row">
-          <h2 className="study-title" style={{ color: category.unitColor }}>{category.name}</h2>
+          <h2 className="study-title">{category.name}</h2>
           <span className="study-mode-tag">Equipment Quiz</span>
         </div>
         <div className="progress-row">
           <div className="progress-bar-track">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${progress}%`, background: category.unitColor }}
-            />
+            <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
           </div>
           <span className="progress-label">{index + 1} / {total}</span>
         </div>
@@ -59,7 +56,6 @@ export default function QuizMode({ category, onFinish, onBack }) {
           key={index}
           item={items[index]}
           onGrade={handleGrade}
-          unitColor={category.unitColor}
         />
       </div>
     </div>

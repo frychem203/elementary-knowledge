@@ -1,50 +1,45 @@
 import { UNITS } from '../data/index';
 
-const modeLabels = {
-  flashcard:       '🃏 Flashcards',
-  match:           '🔗 Match the Term',
-  quiz:            '🔬 Equipment Quiz',
+const MODE_LABELS = {
+  flashcard:         '🃏 Flashcards',
+  match:             '🔗 Match the Term',
+  quiz:              '🔬 Equipment Quiz',
   'definition-quiz': '📝 Definition Quiz',
 };
 
-const modeDescriptions = {
-  flashcard:       'Flip cards & self-grade',
-  match:           'Drag & match pairs',
-  quiz:            'Identify by image',
+const MODE_DESCS = {
+  flashcard:         'Flip cards & self-grade',
+  match:             'Click pairs to match them',
+  quiz:              'Identify by image',
   'definition-quiz': 'Multiple choice',
 };
 
-export default function CategorySelector({ unitId, categories, onSelectMode, onBack }) {
-  const unit = UNITS.find((u) => u.id === unitId);
+// Build the complete flat list of every category across all units,
+// each annotated with its parent unit's id and name.
+const ALL_CATEGORIES = UNITS.flatMap((unit) =>
+  unit.categories.map((cat) => ({
+    ...cat,
+    unitId:   unit.id,
+    unitName: unit.name,
+  }))
+);
 
+export default function CategorySelector({ onSelectMode, onBack }) {
   return (
     <div className="page category-page">
       <div className="page-header">
-        <button className="back-btn" onClick={onBack}>← Units</button>
+        <button className="back-btn" onClick={onBack}>← Home</button>
         <div className="page-header-text">
-          <h2 className="page-title" style={{ color: unit?.color }}>Unit {unitId}: {unit?.name}</h2>
-          <p className="page-desc">
-            {unitId > 1
-              ? `Cumulative — includes all content from Units 1–${unitId}`
-              : 'Choose a category below to start studying'}
-          </p>
+          <h2 className="page-title">📚 Study by Category</h2>
+          <p className="page-desc">Choose any category — each one stands alone.</p>
         </div>
       </div>
 
       <div className="categories-grid">
-        {categories.map((cat) => (
-          <div
-            key={cat.id}
-            className="category-card"
-            style={{ '--cat-color': cat.unitColor }}
-          >
+        {ALL_CATEGORIES.map((cat) => (
+          <div key={cat.id} className="category-card">
             <div className="category-card-header">
-              <span
-                className="category-unit-badge"
-                style={{ background: cat.unitColor }}
-              >
-                Unit {cat.unitId}
-              </span>
+              <span className="category-unit-badge">Unit {cat.unitId}</span>
               <h3 className="category-card-name">{cat.name}</h3>
               <span className="category-item-count">{cat.items.length} items</span>
             </div>
@@ -54,11 +49,10 @@ export default function CategorySelector({ unitId, categories, onSelectMode, onB
                 <button
                   key={mode}
                   className="mode-btn"
-                  style={{ '--mode-color': cat.unitColor }}
                   onClick={() => onSelectMode(cat, mode)}
                 >
-                  <span className="mode-btn-label">{modeLabels[mode]}</span>
-                  <span className="mode-btn-desc">{modeDescriptions[mode]}</span>
+                  <span className="mode-btn-label">{MODE_LABELS[mode]}</span>
+                  <span className="mode-btn-desc">{MODE_DESCS[mode]}</span>
                 </button>
               ))}
             </div>

@@ -6,14 +6,11 @@ const BATCH_SIZE = 6;
 function buildBatch(items, batchIndex) {
   const start   = batchIndex * BATCH_SIZE;
   const slice   = items.slice(start, start + BATCH_SIZE);
-  const terms   = shuffle(slice.map((_, i) => i)); // position → slice index
+  const terms   = shuffle(slice.map((_, i) => i));
   const answers = shuffle(slice.map((_, i) => i));
   return { slice, terms, answers };
 }
 
-// Resolve the monospace class for a single item's term or answer side.
-// Per-item flags (set on mixed-session items) take priority over the
-// category-level fallback.
 function monoClass(item, side, catMono) {
   const flag = item[side] !== undefined ? item[side] : catMono;
   return flag ? 'mono' : '';
@@ -33,7 +30,6 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
   const [matched,        setMatched]        = useState(new Set());
   const [flash,          setFlash]          = useState(null);
   const [totalCorrect,   setTotalCorrect]   = useState(0);
-  const [totalItems,     setTotalItems]     = useState(0);
   const [batchComplete,  setBatchComplete]  = useState(false);
 
   function resetBatch(newBatchIndex) {
@@ -51,7 +47,8 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
     const sliceIdx = batch.terms[posIdx];
     if (matched.has(sliceIdx)) return;
     setSelectedTerm(posIdx);
-    tryMatch(posIdx, selectedAnswer, sliceIdx, selectedAnswer !== null ? batch.answers[selectedAnswer] : null);
+    tryMatch(posIdx, selectedAnswer, sliceIdx,
+      selectedAnswer !== null ? batch.answers[selectedAnswer] : null);
   }
 
   function handleAnswerClick(posIdx) {
@@ -59,7 +56,8 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
     const sliceIdx = batch.answers[posIdx];
     if (matched.has(sliceIdx)) return;
     setSelectedAnswer(posIdx);
-    tryMatch(selectedTerm, posIdx, selectedTerm !== null ? batch.terms[selectedTerm] : null, sliceIdx);
+    tryMatch(selectedTerm, posIdx,
+      selectedTerm !== null ? batch.terms[selectedTerm] : null, sliceIdx);
   }
 
   function tryMatch(termPos, ansPos, termSliceIdx, ansSliceIdx) {
@@ -73,10 +71,7 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
       setSelectedAnswer(null);
 
       if (newMatched.size === batch.slice.length) {
-        const newTotalCorrect = totalCorrect + batch.slice.length;
-        const newTotalItems   = totalItems   + batch.slice.length;
-        setTotalCorrect(newTotalCorrect);
-        setTotalItems(newTotalItems);
+        setTotalCorrect((n) => n + batch.slice.length);
         setBatchComplete(true);
       }
     } else {
@@ -92,7 +87,8 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
   function handleNextBatch() {
     const nextBatch = batchIndex + 1;
     if (nextBatch >= batchCount) {
-      onFinish({ correct: totalCorrect, missed: 0, total: totalCorrect });
+      onFinish({ correct: totalCorrect + batch.slice.length, missed: 0,
+                 total:   totalCorrect + batch.slice.length });
     } else {
       resetBatch(nextBatch);
     }
@@ -105,18 +101,18 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
   const { slice, terms, answers } = batch;
 
   function termClass(posIdx) {
-    const sliceIdx = terms[posIdx];
-    if (matched.has(sliceIdx))                    return 'match-tile match-tile--matched';
-    if (flash && flash.termPos === posIdx)         return 'match-tile match-tile--wrong';
-    if (selectedTerm === posIdx)                   return 'match-tile match-tile--selected';
+    const si = terms[posIdx];
+    if (matched.has(si))                  return 'match-tile match-tile--matched';
+    if (flash && flash.termPos === posIdx) return 'match-tile match-tile--wrong';
+    if (selectedTerm === posIdx)           return 'match-tile match-tile--selected';
     return 'match-tile';
   }
 
   function answerClass(posIdx) {
-    const sliceIdx = answers[posIdx];
-    if (matched.has(sliceIdx))                    return 'match-tile match-tile--matched';
-    if (flash && flash.ansPos === posIdx)          return 'match-tile match-tile--wrong';
-    if (selectedAnswer === posIdx)                 return 'match-tile match-tile--selected';
+    const si = answers[posIdx];
+    if (matched.has(si))                  return 'match-tile match-tile--matched';
+    if (flash && flash.ansPos === posIdx)  return 'match-tile match-tile--wrong';
+    if (selectedAnswer === posIdx)         return 'match-tile match-tile--selected';
     return 'match-tile';
   }
 
@@ -125,15 +121,12 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
       <div className="study-header">
         <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="study-title-row">
-          <h2 className="study-title" style={{ color: category.unitColor }}>{category.name}</h2>
+          <h2 className="study-title">{category.name}</h2>
           <span className="study-mode-tag">Match the Term</span>
         </div>
         <div className="progress-row">
           <div className="progress-bar-track">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${progress}%`, background: category.unitColor }}
-            />
+            <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
           </div>
           <span className="progress-label">
             {batchCount > 1
@@ -146,16 +139,14 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
       {!batchComplete ? (
         <>
           <p className="match-instruction">
-            Click a term, then click its matching answer. Correct pairs will lock in green.
+            Click a term, then click its matching answer. Correct pairs will lock in.
           </p>
           <div className="match-grid">
-            {/* Terms column */}
             <div className="match-col">
               {terms.map((sliceIdx, posIdx) => (
                 <button
                   key={posIdx}
                   className={termClass(posIdx)}
-                  style={{ '--tile-color': category.unitColor }}
                   onClick={() => handleTermClick(posIdx)}
                   disabled={matched.has(sliceIdx)}
                 >
@@ -165,14 +156,11 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
                 </button>
               ))}
             </div>
-
-            {/* Answers column */}
             <div className="match-col">
               {answers.map((sliceIdx, posIdx) => (
                 <button
                   key={posIdx}
                   className={answerClass(posIdx)}
-                  style={{ '--tile-color': category.unitColor }}
                   onClick={() => handleAnswerClick(posIdx)}
                   disabled={matched.has(sliceIdx)}
                 >
@@ -193,11 +181,7 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
           <p className="match-complete-sub">
             You matched all {slice.length} pairs correctly.
           </p>
-          <button
-            className="next-btn"
-            style={{ background: category.unitColor }}
-            onClick={handleNextBatch}
-          >
+          <button className="next-btn" onClick={handleNextBatch}>
             {batchIndex + 1 < batchCount ? 'Next Set →' : 'See Results →'}
           </button>
         </div>

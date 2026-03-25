@@ -1,3 +1,6 @@
+// Ring and percentage are always gold (#CFB68A) per school color scheme.
+const RING_COLOR = '#CFB68A';
+
 export default function Results({ score, returnLabel = 'Choose Another Category', onStudyAgain, onChooseAnother }) {
   const { correct, missed, total } = score;
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
@@ -17,17 +20,9 @@ export default function Results({ score, returnLabel = 'Choose Another Category'
     message = "More practice needed \u2014 you've got this!";
   }
 
-  // Arc / ring visual
-  const radius      = 54;
+  const radius        = 54;
   const circumference = 2 * Math.PI * radius;
   const dashOffset    = circumference - (pct / 100) * circumference;
-
-  // Color based on score
-  let ringColor;
-  if (pct >= 90)      ringColor = '#1D9E75';
-  else if (pct >= 75) ringColor = '#378ADD';
-  else if (pct >= 60) ringColor = '#EF9F27';
-  else                ringColor = '#D85A30';
 
   return (
     <div className="page results-page">
@@ -37,24 +32,23 @@ export default function Results({ score, returnLabel = 'Choose Another Category'
         {/* Score ring */}
         <div className="results-ring-wrap">
           <svg className="results-ring" viewBox="0 0 120 120" width="160" height="160">
+            <circle cx="60" cy="60" r={radius} fill="none" stroke="#e8e4d8" strokeWidth="10" />
             <circle
               cx="60" cy="60" r={radius}
               fill="none"
-              stroke="#e8eaf0"
-              strokeWidth="10"
-            />
-            <circle
-              cx="60" cy="60" r={radius}
-              fill="none"
-              stroke={ringColor}
+              stroke={RING_COLOR}
               strokeWidth="10"
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={dashOffset}
-              style={{ transform: 'rotate(-90deg)', transformOrigin: '60px 60px', transition: 'stroke-dashoffset 1s ease' }}
+              style={{
+                transform: 'rotate(-90deg)',
+                transformOrigin: '60px 60px',
+                transition: 'stroke-dashoffset 1s ease',
+              }}
             />
           </svg>
-          <div className="results-pct" style={{ color: ringColor }}>{pct}%</div>
+          <div className="results-pct">{pct}%</div>
         </div>
 
         {/* Counts */}

@@ -20,21 +20,17 @@ const UNIT_ITEM_COUNTS = {
   7: '52 items',
 };
 
-export default function UnitSelector({ path, onSelectUnit, onBack }) {
-  const isCategory = path === 'category';
-
+// UnitSelector is only used for Path 2 (Study by Unit).
+// The student picks a unit; all its categories will be mixed into one session.
+export default function UnitSelector({ onSelectUnit, onBack }) {
   return (
     <div className="page home-page">
       <div className="page-header">
         <button className="back-btn" onClick={onBack}>← Home</button>
         <div className="page-header-text">
-          <h2 className="page-title">
-            {isCategory ? '📚 Study by Category' : '🎯 Study by Unit'}
-          </h2>
+          <h2 className="page-title">🎯 Study by Unit</h2>
           <p className="page-desc">
-            {isCategory
-              ? 'Select a unit — then choose a category and study mode.'
-              : 'Select a unit — all its categories will be mixed together.'}
+            Select a unit — all its categories will be mixed into one session.
           </p>
         </div>
       </div>
@@ -44,7 +40,6 @@ export default function UnitSelector({ path, onSelectUnit, onBack }) {
           <button
             key={unit.id}
             className="unit-card"
-            style={{ '--unit-color': unit.color }}
             onClick={() => onSelectUnit(unit.id)}
           >
             <div className="unit-card-number">UNIT {unit.id}</div>

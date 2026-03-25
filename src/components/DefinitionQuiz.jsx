@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { shuffle } from '../utils';
 
-// Build one multiple-choice question for `item`.
-// Per-item monoTerm / monoAnswer flags override category-level defaults so
-// that mixed-unit sessions render Space Mono correctly per card.
 function buildQuestion(item, allItems, catMonoTerm, catMonoAnswer) {
   const mt = item.monoTerm   !== undefined ? item.monoTerm   : catMonoTerm;
   const ma = item.monoAnswer !== undefined ? item.monoAnswer : catMonoAnswer;
@@ -14,12 +11,8 @@ function buildQuestion(item, allItems, catMonoTerm, catMonoAnswer) {
   const promptMono = termFirst ? mt : ma;
   const answerMono = termFirst ? ma : mt;
 
-  // Pick 3 wrong answers from the rest of the pool
   const pool   = allItems.filter((i) => i !== item);
-  const wrongs = shuffle(pool)
-    .slice(0, 3)
-    .map((i) => (termFirst ? i.answer : i.term));
-
+  const wrongs = shuffle(pool).slice(0, 3).map((i) => (termFirst ? i.answer : i.term));
   const choices = shuffle([correct, ...wrongs]);
 
   return { prompt, correct, choices, promptMono, answerMono };
@@ -29,9 +22,7 @@ export default function DefinitionQuiz({ category, onFinish, onBack }) {
   const { items, monoTerm, monoAnswer } = category;
 
   const buildDeck = () =>
-    shuffle(items).map((item) =>
-      buildQuestion(item, items, monoTerm, monoAnswer)
-    );
+    shuffle(items).map((item) => buildQuestion(item, items, monoTerm, monoAnswer));
 
   const [deck, setDeck]         = useState(() => buildDeck());
   const [index, setIndex]       = useState(0);
@@ -84,15 +75,12 @@ export default function DefinitionQuiz({ category, onFinish, onBack }) {
       <div className="study-header">
         <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="study-title-row">
-          <h2 className="study-title" style={{ color: category.unitColor }}>{category.name}</h2>
+          <h2 className="study-title">{category.name}</h2>
           <span className="study-mode-tag">Definition Quiz</span>
         </div>
         <div className="progress-row">
           <div className="progress-bar-track">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${progress}%`, background: category.unitColor }}
-            />
+            <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
           </div>
           <span className="progress-label">{index + 1} / {total}</span>
         </div>
@@ -117,22 +105,15 @@ export default function DefinitionQuiz({ category, onFinish, onBack }) {
             <button
               key={i}
               className={choiceClass(choice)}
-              style={{ '--choice-color': category.unitColor }}
               onClick={() => handleSelect(choice)}
             >
-              <span className={question.answerMono ? 'mono' : ''}>
-                {choice}
-              </span>
+              <span className={question.answerMono ? 'mono' : ''}>{choice}</span>
             </button>
           ))}
         </div>
 
         {answered && (
-          <button
-            className="next-btn"
-            style={{ background: category.unitColor }}
-            onClick={handleNext}
-          >
+          <button className="next-btn" onClick={handleNext}>
             {index + 1 >= total ? 'See Results →' : 'Next →'}
           </button>
         )}
