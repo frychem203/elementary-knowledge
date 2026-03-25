@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { shuffle } from '../utils';
 
-// Build a question object for one item.
-// Direction is random: term→definition or definition→term.
-function buildQuestion(item, allItems, monoTerm, monoAnswer) {
-  const termFirst = Math.random() > 0.5;
+// Build one multiple-choice question for `item`.
+// Per-item monoTerm / monoAnswer flags override category-level defaults so
+// that mixed-unit sessions render Space Mono correctly per card.
+function buildQuestion(item, allItems, catMonoTerm, catMonoAnswer) {
+  const mt = item.monoTerm   !== undefined ? item.monoTerm   : catMonoTerm;
+  const ma = item.monoAnswer !== undefined ? item.monoAnswer : catMonoAnswer;
 
-  const prompt    = termFirst ? item.term   : item.answer;
-  const correct   = termFirst ? item.answer : item.term;
-  const promptMono = termFirst ? monoTerm   : monoAnswer;
-  const answerMono = termFirst ? monoAnswer : monoTerm;
+  const termFirst  = Math.random() > 0.5;
+  const prompt     = termFirst ? item.term   : item.answer;
+  const correct    = termFirst ? item.answer : item.term;
+  const promptMono = termFirst ? mt : ma;
+  const answerMono = termFirst ? ma : mt;
 
   // Pick 3 wrong answers from the rest of the pool
-  const pool = allItems.filter((i) => i !== item);
+  const pool   = allItems.filter((i) => i !== item);
   const wrongs = shuffle(pool)
     .slice(0, 3)
     .map((i) => (termFirst ? i.answer : i.term));
@@ -30,11 +33,11 @@ export default function DefinitionQuiz({ category, onFinish, onBack }) {
       buildQuestion(item, items, monoTerm, monoAnswer)
     );
 
-  const [deck, setDeck]             = useState(() => buildDeck());
-  const [index, setIndex]           = useState(0);
-  const [selected, setSelected]     = useState(null);
-  const [correct, setCorrect]       = useState(0);
-  const [missed, setMissed]         = useState(0);
+  const [deck, setDeck]         = useState(() => buildDeck());
+  const [index, setIndex]       = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [correct, setCorrect]   = useState(0);
+  const [missed, setMissed]     = useState(0);
 
   useEffect(() => {
     setDeck(buildDeck());
@@ -55,7 +58,7 @@ export default function DefinitionQuiz({ category, onFinish, onBack }) {
   }
 
   function handleNext() {
-    const isCorrect = selected === question.correct;
+    const isCorrect  = selected === question.correct;
     const newCorrect = isCorrect ? correct + 1 : correct;
     const newMissed  = isCorrect ? missed      : missed + 1;
 
@@ -79,7 +82,7 @@ export default function DefinitionQuiz({ category, onFinish, onBack }) {
   return (
     <div className="page study-page">
       <div className="study-header">
-        <button className="back-btn" onClick={onBack}>← Categories</button>
+        <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="study-title-row">
           <h2 className="study-title" style={{ color: category.unitColor }}>{category.name}</h2>
           <span className="study-mode-tag">Definition Quiz</span>

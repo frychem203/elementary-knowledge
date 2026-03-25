@@ -34,7 +34,7 @@ export default function QuizMode({ category, onFinish, onBack }) {
   return (
     <div className="page study-page">
       <div className="study-header">
-        <button className="back-btn" onClick={onBack}>← Categories</button>
+        <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="study-title-row">
           <h2 className="study-title" style={{ color: category.unitColor }}>{category.name}</h2>
           <span className="study-mode-tag">Equipment Quiz</span>

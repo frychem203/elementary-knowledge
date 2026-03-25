@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
 import { shuffle } from '../utils';
 
-// Build a shuffled deck. For "both directions" we randomly assign front/back per card.
+// Build a shuffled deck.
+// Per-item monoTerm / monoAnswer flags (set on mixed-session items) override
+// the category-level defaults so that Space Mono renders correctly across
+// heterogeneous decks.
 function buildDeck(category) {
-  const { items, monoTerm, monoAnswer } = category;
+  const { items, monoTerm: catMT, monoAnswer: catMA } = category;
   const cards = items.map((item) => {
+    const mt = item.monoTerm   !== undefined ? item.monoTerm   : catMT;
+    const ma = item.monoAnswer !== undefined ? item.monoAnswer : catMA;
     const termFirst = Math.random() > 0.5;
     return {
       front:     termFirst ? item.term   : item.answer,
       back:      termFirst ? item.answer : item.term,
-      frontMono: termFirst ? monoTerm    : monoAnswer,
-      backMono:  termFirst ? monoAnswer  : monoTerm,
+      frontMono: termFirst ? mt : ma,
+      backMono:  termFirst ? ma : mt,
     };
   });
   return shuffle(cards);
@@ -33,9 +38,9 @@ export default function Flashcard({ category, onFinish, onBack }) {
     setMissed(0);
   }, [category]);
 
-  const card    = deck[index];
-  const total   = deck.length;
-  const progress = ((index) / total) * 100;
+  const card     = deck[index];
+  const total    = deck.length;
+  const progress = (index / total) * 100;
 
   function handleFlip() {
     if (animating) return;
@@ -65,7 +70,7 @@ export default function Flashcard({ category, onFinish, onBack }) {
   return (
     <div className="page study-page">
       <div className="study-header">
-        <button className="back-btn" onClick={onBack}>← Categories</button>
+        <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="study-title-row">
           <h2 className="study-title" style={{ color: category.unitColor }}>{category.name}</h2>
           <span className="study-mode-tag">Flashcards</span>

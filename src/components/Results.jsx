@@ -1,4 +1,4 @@
-export default function Results({ score, onStudyAgain, onChooseAnother }) {
+export default function Results({ score, returnLabel = 'Choose Another Category', onStudyAgain, onChooseAnother }) {
   const { correct, missed, total } = score;
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
 
@@ -91,7 +91,7 @@ export default function Results({ score, onStudyAgain, onChooseAnother }) {
             🔄 Study Again
           </button>
           <button className="results-btn results-btn-secondary" onClick={onChooseAnother}>
-            ← Choose Another
+            ← {returnLabel}
           </button>
         </div>
       </div>

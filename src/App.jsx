@@ -1,30 +1,49 @@
 import { useState } from 'react';
-import UnitSelector     from './components/UnitSelector';
+import PathSelector    from './components/PathSelector';
+import UnitSelector    from './components/UnitSelector';
 import CategorySelector from './components/CategorySelector';
-import Flashcard        from './components/Flashcard';
-import QuizMode         from './components/QuizMode';
-import DefinitionQuiz   from './components/DefinitionQuiz';
-import MatchTheTerm     from './components/MatchTheTerm';
-import Results          from './components/Results';
+import UnitModeSelector from './components/UnitModeSelector';
+import Flashcard       from './components/Flashcard';
+import QuizMode        from './components/QuizMode';
+import DefinitionQuiz  from './components/DefinitionQuiz';
+import MatchTheTerm    from './components/MatchTheTerm';
+import Results         from './components/Results';
 import { getCumulativeCategories } from './data/index';
 import './App.css';
 
 export default function App() {
-  const [screen, setScreen]                     = useState('home');
+  // ── Navigation ───────────────────────────────────────────────────────────
+  const [screen, setScreen]   = useState('home');
+  // 'home' | 'units' | 'categories' | 'unit-mode' | 'study' | 'results'
+
+  // ── Path selection ───────────────────────────────────────────────────────
+  const [path, setPath] = useState(null); // 'category' | 'unit'
+
+  // ── Study session ────────────────────────────────────────────────────────
   const [selectedUnitId, setSelectedUnitId]     = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [studyMode, setStudyMode]               = useState(null);
   const [sessionScore, setSessionScore]         = useState(null);
-  // Bump to force re-mount of study component on "Study Again"
+  // Bump to force re-mount of the study component on "Study Again"
   const [studyKey, setStudyKey]                 = useState(0);
 
   const categories = selectedUnitId ? getCumulativeCategories(selectedUnitId) : [];
 
-  function handleSelectUnit(unitId) {
-    setSelectedUnitId(unitId);
-    setScreen('categories');
+  // ── Handlers ─────────────────────────────────────────────────────────────
+
+  function handleSelectPath(newPath) {
+    setPath(newPath);
+    setScreen('units');
   }
 
+  function handleSelectUnit(unitId) {
+    setSelectedUnitId(unitId);
+    setScreen(path === 'category' ? 'categories' : 'unit-mode');
+  }
+
+  // Used by both CategorySelector (Path 1) and UnitModeSelector (Path 2).
+  // `category` is either a real category object or a synthetic one built
+  // from all items in the unit.
   function handleSelectMode(category, mode) {
     setSelectedCategory(category);
     setStudyMode(mode);
@@ -42,23 +61,40 @@ export default function App() {
     setScreen('study');
   }
 
+  // "Choose Another" returns to the right pre-study screen for the active path.
   function handleChooseAnother() {
-    setScreen('categories');
+    setScreen(path === 'category' ? 'categories' : 'unit-mode');
   }
 
-  function handleBackToCategories() {
-    setScreen('categories');
+  // Back button inside every study component.
+  function handleBackFromStudy() {
+    setScreen(path === 'category' ? 'categories' : 'unit-mode');
+  }
+
+  function handleBackToUnits() {
+    setScreen('units');
   }
 
   function handleBackToHome() {
-    setScreen('home');
+    setPath(null);
     setSelectedUnitId(null);
+    setScreen('home');
   }
 
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="app">
+
       {screen === 'home' && (
-        <UnitSelector onSelectUnit={handleSelectUnit} />
+        <PathSelector onSelectPath={handleSelectPath} />
+      )}
+
+      {screen === 'units' && (
+        <UnitSelector
+          path={path}
+          onSelectUnit={handleSelectUnit}
+          onBack={handleBackToHome}
+        />
       )}
 
       {screen === 'categories' && (
@@ -66,7 +102,15 @@ export default function App() {
           unitId={selectedUnitId}
           categories={categories}
           onSelectMode={handleSelectMode}
-          onBack={handleBackToHome}
+          onBack={handleBackToUnits}
+        />
+      )}
+
+      {screen === 'unit-mode' && (
+        <UnitModeSelector
+          unitId={selectedUnitId}
+          onSelectMode={handleSelectMode}
+          onBack={handleBackToUnits}
         />
       )}
 
@@ -77,7 +121,7 @@ export default function App() {
               key={studyKey}
               category={selectedCategory}
               onFinish={handleFinish}
-              onBack={handleBackToCategories}
+              onBack={handleBackFromStudy}
             />
           )}
           {studyMode === 'quiz' && (
@@ -85,7 +129,7 @@ export default function App() {
               key={studyKey}
               category={selectedCategory}
               onFinish={handleFinish}
-              onBack={handleBackToCategories}
+              onBack={handleBackFromStudy}
             />
           )}
           {studyMode === 'definition-quiz' && (
@@ -93,7 +137,7 @@ export default function App() {
               key={studyKey}
               category={selectedCategory}
               onFinish={handleFinish}
-              onBack={handleBackToCategories}
+              onBack={handleBackFromStudy}
             />
           )}
           {studyMode === 'match' && (
@@ -101,7 +145,7 @@ export default function App() {
               key={studyKey}
               category={selectedCategory}
               onFinish={handleFinish}
-              onBack={handleBackToCategories}
+              onBack={handleBackFromStudy}
             />
           )}
         </>
@@ -110,10 +154,14 @@ export default function App() {
       {screen === 'results' && sessionScore && (
         <Results
           score={sessionScore}
+          returnLabel={
+            path === 'category' ? 'Choose Another Category' : 'Change Study Mode'
+          }
           onStudyAgain={handleStudyAgain}
           onChooseAnother={handleChooseAnother}
         />
       )}
+
     </div>
   );
 }

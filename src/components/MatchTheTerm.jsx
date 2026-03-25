@@ -4,11 +4,19 @@ import { shuffle } from '../utils';
 const BATCH_SIZE = 6;
 
 function buildBatch(items, batchIndex) {
-  const start = batchIndex * BATCH_SIZE;
-  const slice = items.slice(start, start + BATCH_SIZE);
+  const start   = batchIndex * BATCH_SIZE;
+  const slice   = items.slice(start, start + BATCH_SIZE);
   const terms   = shuffle(slice.map((_, i) => i)); // position → slice index
   const answers = shuffle(slice.map((_, i) => i));
   return { slice, terms, answers };
+}
+
+// Resolve the monospace class for a single item's term or answer side.
+// Per-item flags (set on mixed-session items) take priority over the
+// category-level fallback.
+function monoClass(item, side, catMono) {
+  const flag = item[side] !== undefined ? item[side] : catMono;
+  return flag ? 'mono' : '';
 }
 
 export default function MatchTheTerm({ category, onFinish, onBack }) {
@@ -20,16 +28,16 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
 
   const batchCount = Math.ceil(allItems.length / BATCH_SIZE);
 
-  const [selectedTerm, setSelectedTerm]     = useState(null); // index in batch.terms
-  const [selectedAnswer, setSelectedAnswer] = useState(null); // index in batch.answers
-  const [matched, setMatched]               = useState(new Set()); // matched slice indices
-  const [flash, setFlash]                   = useState(null); // 'term-N' or 'ans-N' for wrong flash
-  const [totalCorrect, setTotalCorrect]     = useState(0);
-  const [totalItems, setTotalItems]         = useState(0);
-  const [batchComplete, setBatchComplete]   = useState(false);
+  const [selectedTerm,   setSelectedTerm]   = useState(null);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [matched,        setMatched]        = useState(new Set());
+  const [flash,          setFlash]          = useState(null);
+  const [totalCorrect,   setTotalCorrect]   = useState(0);
+  const [totalItems,     setTotalItems]     = useState(0);
+  const [batchComplete,  setBatchComplete]  = useState(false);
 
   function resetBatch(newBatchIndex) {
-    setBatch(buildBatch(allItems, newBatchIndex));  // allItems is stable
+    setBatch(buildBatch(allItems, newBatchIndex));
     setSelectedTerm(null);
     setSelectedAnswer(null);
     setMatched(new Set());
@@ -59,22 +67,19 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
     if (termSliceIdx === null || ansSliceIdx === null) return;
 
     if (termSliceIdx === ansSliceIdx) {
-      // Correct match
       const newMatched = new Set(matched).add(termSliceIdx);
       setMatched(newMatched);
       setSelectedTerm(null);
       setSelectedAnswer(null);
 
       if (newMatched.size === batch.slice.length) {
-        // Batch complete
         const newTotalCorrect = totalCorrect + batch.slice.length;
-        const newTotalItems   = totalItems + batch.slice.length;
+        const newTotalItems   = totalItems   + batch.slice.length;
         setTotalCorrect(newTotalCorrect);
         setTotalItems(newTotalItems);
         setBatchComplete(true);
       }
     } else {
-      // Wrong match — flash both red briefly
       setFlash({ termPos, ansPos });
       setTimeout(() => {
         setFlash(null);
@@ -93,7 +98,7 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
     }
   }
 
-  const total    = allItems.length;
+  const total     = allItems.length;
   const doneItems = batchIndex * BATCH_SIZE + matched.size;
   const progress  = (doneItems / total) * 100;
 
@@ -101,24 +106,24 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
 
   function termClass(posIdx) {
     const sliceIdx = terms[posIdx];
-    if (matched.has(sliceIdx)) return 'match-tile match-tile--matched';
-    if (flash && flash.termPos === posIdx) return 'match-tile match-tile--wrong';
-    if (selectedTerm === posIdx) return 'match-tile match-tile--selected';
+    if (matched.has(sliceIdx))                    return 'match-tile match-tile--matched';
+    if (flash && flash.termPos === posIdx)         return 'match-tile match-tile--wrong';
+    if (selectedTerm === posIdx)                   return 'match-tile match-tile--selected';
     return 'match-tile';
   }
 
   function answerClass(posIdx) {
     const sliceIdx = answers[posIdx];
-    if (matched.has(sliceIdx)) return 'match-tile match-tile--matched';
-    if (flash && flash.ansPos === posIdx) return 'match-tile match-tile--wrong';
-    if (selectedAnswer === posIdx) return 'match-tile match-tile--selected';
+    if (matched.has(sliceIdx))                    return 'match-tile match-tile--matched';
+    if (flash && flash.ansPos === posIdx)          return 'match-tile match-tile--wrong';
+    if (selectedAnswer === posIdx)                 return 'match-tile match-tile--selected';
     return 'match-tile';
   }
 
   return (
     <div className="page study-page">
       <div className="study-header">
-        <button className="back-btn" onClick={onBack}>← Categories</button>
+        <button className="back-btn" onClick={onBack}>← Back</button>
         <div className="study-title-row">
           <h2 className="study-title" style={{ color: category.unitColor }}>{category.name}</h2>
           <span className="study-mode-tag">Match the Term</span>
@@ -154,7 +159,7 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
                   onClick={() => handleTermClick(posIdx)}
                   disabled={matched.has(sliceIdx)}
                 >
-                  <span className={monoTerm ? 'mono' : ''}>
+                  <span className={monoClass(slice[sliceIdx], 'monoTerm', monoTerm)}>
                     {slice[sliceIdx].term}
                   </span>
                 </button>
@@ -171,7 +176,7 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
                   onClick={() => handleAnswerClick(posIdx)}
                   disabled={matched.has(sliceIdx)}
                 >
-                  <span className={monoAnswer ? 'mono' : ''}>
+                  <span className={monoClass(slice[sliceIdx], 'monoAnswer', monoAnswer)}>
                     {slice[sliceIdx].answer}
                   </span>
                 </button>
@@ -193,7 +198,7 @@ export default function MatchTheTerm({ category, onFinish, onBack }) {
             style={{ background: category.unitColor }}
             onClick={handleNextBatch}
           >
-            {batchIndex + 1 < batchCount ? `Next Set →` : 'See Results →'}
+            {batchIndex + 1 < batchCount ? 'Next Set →' : 'See Results →'}
           </button>
         </div>
       )}
