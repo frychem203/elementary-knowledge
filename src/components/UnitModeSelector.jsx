@@ -2,6 +2,10 @@ import { UNITS, getCumulativeCategories } from '../data/index';
 
 // Build a synthetic "category" object combining all items for a given mode
 // across the entire cumulative unit.
+//
+// Per-item monoTerm/monoAnswer overrides are resolved here so that study
+// components receive a single, already-resolved value on every item rather
+// than having to re-check the category defaults themselves.
 function buildSyntheticCategory(unitId, mode, categories, unit) {
   const items = [];
 
@@ -9,7 +13,14 @@ function buildSyntheticCategory(unitId, mode, categories, unit) {
     for (const cat of categories) {
       if (cat.modes.includes('flashcard') || cat.modes.includes('definition-quiz')) {
         for (const item of cat.items) {
-          items.push({ ...item, monoTerm: cat.monoTerm, monoAnswer: cat.monoAnswer });
+          // Resolve category-level defaults onto the item, but honour any
+          // existing per-item overrides (monoTerm / monoAnswer on the item
+          // itself take precedence over the category defaults).
+          items.push({
+            ...item,
+            monoTerm:   item.monoTerm   !== undefined ? item.monoTerm   : cat.monoTerm,
+            monoAnswer: item.monoAnswer !== undefined ? item.monoAnswer : cat.monoAnswer,
+          });
         }
       }
     }
@@ -34,10 +45,10 @@ function buildSyntheticCategory(unitId, mode, categories, unit) {
 }
 
 const MODE_META = {
-  flashcard:         { label: '🃏 Flashcards',       desc: 'Flip cards & self-grade' },
-  match:             { label: '🔗 Match the Term',   desc: 'Click pairs to match them' },
-  quiz:              { label: '🔬 Equipment Quiz',   desc: 'Identify lab tools by image' },
-  'definition-quiz': { label: '📝 Definition Quiz',  desc: 'Multiple choice — all terms mixed' },
+  flashcard:         { label: '🃏 Flashcards',      desc: 'Flip cards & self-grade' },
+  match:             { label: '🔗 Match the Term',  desc: 'Click pairs to match them' },
+  quiz:              { label: '🔬 Equipment Quiz',  desc: 'Identify lab tools by image' },
+  'definition-quiz': { label: '📝 Definition Quiz', desc: 'Multiple choice — all terms mixed' },
 };
 
 export default function UnitModeSelector({ unitId, onSelectMode, onBack }) {

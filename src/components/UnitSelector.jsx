@@ -10,15 +10,18 @@ const UNIT_SUBTITLES = {
   7: '+ Heat Energy Terms',
 };
 
-const UNIT_ITEM_COUNTS = {
-  1: '16 items',
-  2: '20 items',
-  3: '26 items',
-  4: '32 items',
-  5: '38 items',
-  6: '44 items',
-  7: '52 items',
-};
+// Compute cumulative item counts dynamically so they always match the data.
+const CUMULATIVE_COUNTS = (() => {
+  const counts = {};
+  let running = 0;
+  for (const unit of UNITS) {
+    for (const cat of unit.categories) {
+      running += cat.items.length;
+    }
+    counts[unit.id] = running;
+  }
+  return counts;
+})();
 
 // UnitSelector is only used for Path 2 (Study by Unit).
 // The student picks a unit; all its categories will be mixed into one session.
@@ -46,7 +49,7 @@ export default function UnitSelector({ onSelectUnit, onBack }) {
             <div className="unit-card-name">{unit.name}</div>
             <div className="unit-card-subtitle">{UNIT_SUBTITLES[unit.id]}</div>
             <div className="unit-card-meta">
-              <span className="unit-card-count">{UNIT_ITEM_COUNTS[unit.id]}</span>
+              <span className="unit-card-count">{CUMULATIVE_COUNTS[unit.id]} items</span>
               <span className="unit-card-cumulative">
                 {unit.id > 1 ? `Cumulative (Units 1–${unit.id})` : 'Introductory unit'}
               </span>
